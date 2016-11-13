@@ -8,12 +8,11 @@ def serial_ports():
 
     """
 #     ports = glob.glob('/dev/tty[A-Za-z]*')
-    ports = glob.glob('/dev/tty[ACM]*')
+    ports = glob.glob('/dev/ttyACM*')
     result = []
     for port in ports:
         try:
             s = serial.Serial(port)
-            print(s.portstr)
             s.close()
             result.append(port)
         except (serial.SerialException) as e:
