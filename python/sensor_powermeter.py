@@ -37,45 +37,57 @@ class RealSensor(Nors_GenericSensor):
     def __init__(self):
 
         self.sensor_name = 'PWRMTR'
+        self.message = {}
         
-        if self.connect_to_energy_meter() == False:
+        if self.connect_to_energy_meter() == True:
+            super(RealSensor, self).__init__(
+                                             gs_name = self.sensor_name,
+                                             gs_id = 'bdeb5806-a9a2-11e6-a119-080027bc22fd',
+                                             gs_description = 'Dual phase power meter', 
+                                             gs_interface = None,
+                                             gs_pull_interval = 15, 
+                                             gs_read_interval = 1)
+        else:
             logger.log('Energy meter device was not found on serial ports', 'error')
-            return False
-        
-        print('Deu certo')
-        
-        super(RealSensor, self).__init__(
-                                         gs_name = self.sensor_name,
-                                         gs_id = 'bdeb5806-a9a2-11e6-a119-080027bc22fd',
-                                         gs_description = 'Dual phase power meter', 
-                                         gs_interface = None,
-                                         gs_pull_interval = 15, 
-                                         gs_read_interval = 14)
+            raise SystemExit('Exiting')
 
         
     def SensorRead(self):
-        if self.ser.in_waiting > 0 :
+        if self.ser.inWaiting() > 0 :
             msg = self.ser.readline()
             measures = self.msg_parse(msg)
-            print(str(measures))
-
-        return measures
+#             if measures is None:
+#                 self.ser.flushInput()
+#                 self.ser.flushOutput()
+                
+            logger.log(str(measures), 'info')
+            return measures
+        else:
+            return None
 
     def SensorDataProcessing(self,sensor_data):
         return sensor_data
     
     def connect_to_energy_meter(self):
+        logger.log('Searching serial ports','info')
         ports = serial_ports()
         for port in ports:
             try:
-                self.ser = serial.Serial(port, 115200, timeout=5)
-                self.ser.flushInput()
-                self.ser.flushOutput()
-                self.ser.write('#')
-                time.sleep(2)
-                check_em = self.ser.read()
-                if check_em == '!':
-                    return True
+                logger.log('Trying ' + str(port),'info')
+                self.ser = serial.Serial(port, 115200, timeout=10)
+                retry = 10
+                while retry > 0:
+                    logger.log('Countdown ' + str(retry),'info')
+                    self.ser.flushInput()
+                    self.ser.flushOutput()
+                    self.ser.write('#')
+#                     time.sleep(2)
+                    check_em = self.ser.read()
+                    if check_em == '!':
+                        logger.log('Success on port ' + str(port),'info')
+                        return True
+                    retry = retry-1
+#                     time.sleep(2)
                 
             except (serial.SerialException) as e:
                 return False
@@ -87,16 +99,30 @@ class RealSensor(Nors_GenericSensor):
         measure = {}
         # for python 3 use:
         # measure['channel'] = int(str(msg_p[0]).replace("b'@", "").replace("'", ""))
-        measure['channel'] = int(str(msg_p[0]).replace("@", ""))
+        channel = int(str(msg_p[0]).replace("@", ""))
+        if (channel != 1) and (channel != 2):
+            return None
+        
+        measure['channel'] = channel
         measure['real_power'] = float(msg_p[1])
         measure['apparent_power'] = float(msg_p[2]) 
         measure['Vrms'] = float(msg_p[3]) 
         measure['Irms'] = float(msg_p[4]) 
         measure['power_factor'] = float(msg_p[5])
-        return measure 
+#         return {str(channel): measure}
+        return self.msg_agregate(measure) 
 
-
-
+    def msg_agregate(self, msg):
+        print(msg)
+        if msg['channel'] == 1:
+            self.message = {'ch1': msg}
+            print('canal1')
+            return None
+        if msg['channel'] == 2:
+            self.message['ch2'] = msg
+            print('canal2')
+            return self.message
+        
 if __name__ == '__main__':
     sensor = RealSensor()
 
