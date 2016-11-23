@@ -5,7 +5,6 @@ sensor_power.py: Current and Voltage sensor driver
 
 This sensor driver collects current and voltage measurements from external arduino board.
 """
-import time
 
 __author__ = "Daniel Mazzer"
 __copyright__ = "Copyright 2016, NORS project"
@@ -14,13 +13,8 @@ __license__ = "MIT"
 __maintainer__ = "Daniel Mazzer"
 __email__ = "dmazzer@gmail.com"
 
-import sys
 import signal
 import serial
-
-# sys.path.append('./genericsensor/')
-# sys.path.append('./norsutils/')
-# sys.path.append('../../')
 
 from genericsensor.genericsensor import Nors_GenericSensor
 
@@ -45,8 +39,7 @@ class RealSensor(Nors_GenericSensor):
                                              gs_id = 'bdeb5806-a9a2-11e6-a119-080027bc22fd',
                                              gs_description = 'Dual phase power meter', 
                                              gs_interface = None,
-                                             gs_pull_interval = 15, 
-                                             gs_read_interval = 1)
+                                             gs_read_interval = 18)
         else:
             logger.log('Energy meter device was not found on serial ports', 'error')
             raise SystemExit('Exiting')
@@ -60,7 +53,7 @@ class RealSensor(Nors_GenericSensor):
 #                 self.ser.flushInput()
 #                 self.ser.flushOutput()
                 
-            logger.log(str(measures), 'info')
+            logger.log(str(measures), 'debug')
             return measures
         else:
             return None
@@ -75,7 +68,7 @@ class RealSensor(Nors_GenericSensor):
             try:
                 logger.log('Trying ' + str(port),'info')
                 self.ser = serial.Serial(port, 115200, timeout=10)
-                retry = 10
+                retry = 100
                 while retry > 0:
                     logger.log('Countdown ' + str(retry),'info')
                     self.ser.flushInput()
@@ -113,14 +106,14 @@ class RealSensor(Nors_GenericSensor):
         return self.msg_agregate(measure) 
 
     def msg_agregate(self, msg):
-        print(msg)
+#         print(msg)
         if msg['channel'] == 1:
             self.message = {'ch1': msg}
-            print('canal1')
+#             print('canal1')
             return None
         if msg['channel'] == 2:
             self.message['ch2'] = msg
-            print('canal2')
+#             print('canal2')
             return self.message
         
 if __name__ == '__main__':
