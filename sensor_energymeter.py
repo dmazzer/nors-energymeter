@@ -39,7 +39,7 @@ class RealSensor(Nors_GenericSensor):
                                              gs_id = 'bdeb5806-a9a2-11e6-a119-080027bc22fd',
                                              gs_description = 'Dual phase power meter', 
                                              gs_interface = None,
-                                             gs_read_interval = 18)
+                                             gs_read_interval = 60)
         else:
             logger.log('Energy meter device was not found on serial ports', 'error')
             raise SystemExit('Exiting')
@@ -89,6 +89,11 @@ class RealSensor(Nors_GenericSensor):
 
     def msg_parse(self, msg):
         msg_p = msg.split()
+        
+        # checking message parsing result using list size
+        if len(msg_p) != 6:
+            return None
+        
         measure = {}
         # for python 3 use:
         # measure['channel'] = int(str(msg_p[0]).replace("b'@", "").replace("'", ""))
@@ -103,6 +108,7 @@ class RealSensor(Nors_GenericSensor):
         measure['Irms'] = float(msg_p[4]) 
         measure['power_factor'] = float(msg_p[5])
 #         return {str(channel): measure}
+        
         return self.msg_agregate(measure) 
 
     def msg_agregate(self, msg):
