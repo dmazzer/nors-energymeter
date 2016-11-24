@@ -52,8 +52,8 @@ void loop()
   emon1.calcVI(20,2000);
 
    // Channel 2
-  Irms2 = emon2.calcIrms(1480);
-//  emon2.calcVI(20,2000);
+//  Irms2 = emon2.calcIrms(1480);
+  emon2.calcVI(20,2000);
 
    if(stabilization == 0)
    {
