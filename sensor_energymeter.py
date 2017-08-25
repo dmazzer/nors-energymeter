@@ -31,7 +31,7 @@ class RealSensor(Nors_GenericSensor):
         self.message = {}
 
         self.no_data_timeout_reset = 5;
-        self.no_data_timeout = no_data_timeout_reset;
+        self.no_data_timeout = self.no_data_timeout_reset;
 
         if self.connect_to_energy_meter() == True:
             super(RealSensor, self).__init__(
