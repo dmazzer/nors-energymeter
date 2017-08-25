@@ -83,6 +83,8 @@ class RealSensor(Nors_GenericSensor):
 #                     time.sleep(2)
                 
             except (serial.SerialException) as e:
+                logger.log('Energy meter device serial port exception', 'error')
+                print(e)
                 return False
         
         return False
