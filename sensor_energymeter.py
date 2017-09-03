@@ -56,12 +56,12 @@ class RealSensor(Nors_GenericSensor):
             if self.no_data_timeout > 0:
                 self.no_data_timeout = self.no_data_timeout - 1
             else:
-                logger.log('Energy meter device is not sending data... will try to reconnect', 'info')
+                logger.log('Energy meter device is not sending data... will try to reconnect', 'debug')
                 self.no_data_timeout = self.no_data_timeout_reset
                 self.reset_serial_port()
                 res = self.connect_to_energy_meter()
                 if res == True:
-                    logger.log('Energy meter device is (re)connected', 'info')
+                    logger.log('Energy meter device is (re)connected', 'debug')
                 else:
                     logger.log('Energy meter device fail to reconnect', 'error')
 

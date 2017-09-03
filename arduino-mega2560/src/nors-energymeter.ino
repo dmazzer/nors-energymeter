@@ -22,11 +22,11 @@ void setup()
   int i;
   Serial.begin(115200);
   //Pino, calibracao - Cur Const= Ratio/BurdenR. 2000/33 = 60
-  emon1.current(pino_sct1, 62.3);
-  emon1.voltage(pino_svt1, 545, 1.7);
+  emon1.current(pino_sct1, 54.82);
+  emon1.voltage(pino_svt1, 116, 1.7);
   
-  emon2.current(pino_sct2, 60);
-  emon2.voltage(pino_svt2, 545, 1.7);
+  emon2.current(pino_sct2, 52.8);
+  emon2.voltage(pino_svt2, 118, 1.7);
   pinMode(LED_BUILTIN, OUTPUT);
 
 }
