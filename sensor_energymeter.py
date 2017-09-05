@@ -5,7 +5,6 @@ sensor_power.py: Current and Voltage sensor driver
 
 This sensor driver collects current and voltage measurements from external arduino board.
 """
-
 __author__ = "Daniel Mazzer"
 __copyright__ = "Copyright 2016, NORS project"
 __credits__ = ""
@@ -15,6 +14,8 @@ __email__ = "dmazzer@gmail.com"
 
 import signal
 import serial
+from time import sleep, time
+import json
 
 from genericsensor.genericsensor import Nors_GenericSensor
 from grovepi import *
@@ -30,8 +31,8 @@ class RealSensor(Nors_GenericSensor):
         self.sensor_name = 'PWRMTR'
         self.message = {}
 
-        self.no_data_timeout_reset = 5;
-        self.no_data_timeout = self.no_data_timeout_reset;
+        self.no_data_countdown_reset = 5;
+        self.no_data_coutdown = self.no_data_countdown_reset;
 
         if self.connect_to_energy_meter() == True:
             super(RealSensor, self).__init__(
@@ -46,18 +47,25 @@ class RealSensor(Nors_GenericSensor):
 
 
     def SensorRead(self):
+        # Send a measure request to Arduino Energy Meter
+        self.ser.flushInput()
+        sleep(0.1)
+        self.ser.write('?')
+        sleep(2)
         if self.ser.inWaiting() > 0 :
+            # print('receive data')
             msg = self.ser.readline()
             measures = self.msg_parse(msg)
-            logger.log(str(measures), 'debug')
-            self.no_data_timeout = self.no_data_timeout_reset
+            logger.log(str(measures), 'info')
+            self.no_data_coutdown = self.no_data_countdown_reset
             return measures
         else:
-            if self.no_data_timeout > 0:
-                self.no_data_timeout = self.no_data_timeout - 1
+            # print('didnt receive data')
+            if self.no_data_coutdown > 0:
+                self.no_data_coutdown = self.no_data_coutdown - 1
             else:
                 logger.log('Energy meter device is not sending data... will try to reconnect', 'debug')
-                self.no_data_timeout = self.no_data_timeout_reset
+                self.no_data_coutdown = self.no_data_countdown_reset
                 self.reset_serial_port()
                 res = self.connect_to_energy_meter()
                 if res == True:
@@ -83,6 +91,7 @@ class RealSensor(Nors_GenericSensor):
                     self.ser.flushInput()
                     self.ser.flushOutput()
                     self.ser.write('#')
+                    sleep(0.2)
                     check_em = self.ser.read()
                     if check_em == '!':
                         logger.log('Success on port ' + str(port),'info')
@@ -104,35 +113,45 @@ class RealSensor(Nors_GenericSensor):
             print(e)
 
     def msg_parse(self, msg):
-        msg_p = msg.split()
-
-        # checking message parsing result using list size
-        if len(msg_p) != 6:
+        
+        try:
+            msg_json = json.loads(msg)
+        except ValueError, e:
+            print(e)
             return None
+        
+        # print(msg_json)
+        return msg_json
+        
+#         msg_p = msg.split()
+# 
+#         # checking message parsing result using list size
+#         if len(msg_p) != 6:
+#             return None
+# 
+#         measure = {}
+#         # for python 3 use:
+#         # measure['channel'] = int(str(msg_p[0]).replace("b'@", "").replace("'", ""))
+#         channel = int(str(msg_p[0]).replace("@", ""))
+#         if (channel != 1) and (channel != 2):
+#             return None
+# 
+#         measure['channel'] = channel
+#         measure['real_power'] = float(msg_p[1])
+#         measure['apparent_power'] = float(msg_p[2])
+#         measure['Vrms'] = float(msg_p[3])
+#         measure['Irms'] = float(msg_p[4])
+#         measure['power_factor'] = float(msg_p[5])
+# 
+#         return self.msg_agregate(measure)
 
-        measure = {}
-        # for python 3 use:
-        # measure['channel'] = int(str(msg_p[0]).replace("b'@", "").replace("'", ""))
-        channel = int(str(msg_p[0]).replace("@", ""))
-        if (channel != 1) and (channel != 2):
-            return None
-
-        measure['channel'] = channel
-        measure['real_power'] = float(msg_p[1])
-        measure['apparent_power'] = float(msg_p[2])
-        measure['Vrms'] = float(msg_p[3])
-        measure['Irms'] = float(msg_p[4])
-        measure['power_factor'] = float(msg_p[5])
-
-        return self.msg_agregate(measure)
-
-    def msg_agregate(self, msg):
-        if msg['channel'] == 1:
-            self.message = {'ch1': msg}
-            return None
-        if msg['channel'] == 2:
-            self.message['ch2'] = msg
-            return self.message
+#     def msg_agregate(self, msg):
+#         if msg['channel'] == 1:
+#             self.message = {'ch1': msg}
+#             return None
+#         if msg['channel'] == 2:
+#             self.message['ch2'] = msg
+#             return self.message
 
 if __name__ == '__main__':
     sensor = RealSensor()
